@@ -54,7 +54,7 @@ Registry + CI-built, digest-pinned, signed images; TLS via cert-manager; HPA + P
 ## How I used AI
 - Tool: Kubernetes Official Documentation
 - Helped me to get sample reference templates and technical specifications for any configuration related doubts
-- Tool: Kiro. 
+- Tool: Kiro.
 - Used for: first draft of the python service and setup script. Code review of the project, got suggestion.
-- AI Suggestion: After code review, AI suggested to use python:3.12.7-slim-bookworm before that I've used python:3.12.7-alpine. Its suggested that alpine image has compatibility issues, slower build times, or unexpected runtime bugs. 
-- What I had to correct: <list After code review, Kiro says to use request and limit memory 64Mi and 128Mi. But to prevent memory leak and give thread to have room space, I have not changed my memory>.
+- AI Suggestion: After code review, AI suggested to use `python:3.12.7-slim-bookworm` before that I've used `python:3.12.7-alpine`. Its suggested that alpine image has compatibility issues, slower build times, or unexpected runtime bugs. 
+- What I had to correct: After code review, Kiro says to use request and limit memory 64Mi and 128Mi. But to prevent memory leak and give thread to have room space, I have not changed my memory.
