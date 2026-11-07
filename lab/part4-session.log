@@ -1,0 +1,1683 @@
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h../se cenario.sh[1m [0m[0m up[?2004l
+==> applying cluster environment (cluster-state/)
+namespace/debug-lab created
+Error from server (NotFound): error when creating "cluster-state/limits.yaml": namespaces "debug-lab" not found
+==> installing the broken chart
+Release "debug-lab" does not exist. Installing it now.
+Error: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"
+
+[2mhelm reported an error. That is not your machine misbehaving —[0m
+[2mit is part of the exercise. Read the error; it is evidence.[0m
+
+Lab is (partially) installed. Investigate with kubectl, fix the chart,
+re-run './scenario.sh up' to apply your fixes, and './scenario.sh verify'
+to check progress.
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h./scenario.sh up  verift y[?2004l
+==> verifying goal state in namespace debug-lab
+  [31mFAIL[0m  migrate Job has not completed (does it exist? did the chart even install cleanly?)
+  [31mFAIL[0m  deployment backend: 0/1 ready
+  [31mFAIL[0m  deployment gateway: 0/1 ready
+  [31mFAIL[0m  deployment worker: 0/1 ready
+  [31mFAIL[0m  deployment reporter: 0/1 ready
+  [31mFAIL[0m  deployment metrics: 0/1 ready
+  [32mPASS[0m  no pods in CrashLoopBackOff
+  [31mFAIL[0m  ServiceAccount debug-lab/reporter cannot list pods
+  [31mFAIL[0m  backend does not answer on http://backend:8080/healthz
+  [31mFAIL[0m  gateway /status does not report backend=ok
+  [31mFAIL[0m  reporter /report does not return a pod count
+
+[31m10 check(s) failing[0m, 1 passing. Keep digging — every failure is a symptom.
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hkkue bectl get pods -n  A[?2004l
+NAMESPACE            NAME                                         READY   STATUS                       RESTARTS      AGE
+debug-lab            backend-7948fd6b4b-mxsk7                     0/1     CreateContainerConfigError   0             111s
+debug-lab            gateway-5cbdcd4bf8-gnlgj                     0/1     CreateContainerConfigError   0             111s
+debug-lab            metrics-547dccf75-6qlkg                      0/1     CreateContainerConfigError   0             111s
+debug-lab            reporter-6f8bff6b8d-mq6x8                    0/1     CreateContainerConfigError   0             111s
+debug-lab            worker-5fcd6b9b6b-8gwjr                      0/1     CreateContainerConfigError   0             111s
+demo                 demo-5574b4cc76-78cbg                        1/1     Running                      2 (21m ago)   24m
+demo                 demo-5574b4cc76-qslmk                        1/1     Running                      2 (21m ago)   24m
+ingress-nginx        ingress-nginx-admission-create-m92v7         0/1     Completed                    0             26m
+ingress-nginx        ingress-nginx-admission-patch-zbtrl          0/1     Completed                    0             26m
+ingress-nginx        ingress-nginx-controller-5dcb979cfd-4c2ng    1/1     Running                      0             26m
+kube-system          coredns-559f6c778d-bwglx                     1/1     Running                      0             26m
+kube-system          coredns-559f6c778d-mqdpg                     1/1     Running                      0             26m
+kube-system          etcd-demo-control-plane                      1/1     Running                      0             26m
+kube-system          kindnet-smg9h                                1/1     Running                      0             26m
+kube-system          kube-apiserver-demo-control-plane            1/1     Running                      0             26m
+kube-system          kube-controller-manager-demo-control-plane   1/1     Running                      1 (23m ago)   26m
+kube-system          kube-proxy-sgmhd                             1/1     Running                      0             26m
+kube-system          kube-scheduler-demo-control-plane            1/1     Running                      1 (23m ago)   26m
+local-path-storage   local-path-provisioner-75f7fc7dc5-8lz55      1/1     Running                      0             26m
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hkubectl get pods -A n debug-lab[?2004l
+NAME                        READY   STATUS                       RESTARTS   AGE
+backend-7948fd6b4b-mxsk7    0/1     CreateContainerConfigError   0          2m11s
+gateway-5cbdcd4bf8-gnlgj    0/1     CreateContainerConfigError   0          2m11s
+metrics-547dccf75-6qlkg     0/1     CreateContainerConfigError   0          2m11s
+reporter-6f8bff6b8d-mq6x8   0/1     CreateContainerConfigError   0          2m11s
+worker-5fcd6b9b6b-8gwjr     0/1     CreateContainerConfigError   0          2m11s
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hkkun bectl -n debug-lab describe pod [7mbackend-7948fd6b4b-mxsk7[27m[24D[27mb[27ma[27mc[27mk[27me[27mn[27md[27m-[27m7[27m9[27m4[27m8[27mf[27md[27m6[27mb[27m4[27mb[27m-[27mm[27mx[27ms[27mk[27m7 | sed -n '/Events:/,$p'[?2004l
+Events:
+  Type     Reason     Age                  From               Message
+  ----     ------     ----                 ----               -------
+  Normal   Scheduled  4m30s                default-scheduler  Successfully assigned debug-lab/backend-7948fd6b4b-mxsk7 to demo-control-plane
+  Normal   Pulling    4m29s                kubelet            Pulling image "docker.io/ebinterview/eb-debug-app:1.0.1"
+  Normal   Pulled     4m21s                kubelet            Successfully pulled image "docker.io/ebinterview/eb-debug-app:1.0.1" in 1.52s (7.614s including waiting). Image size: 3279587 bytes.
+  Warning  Failed     1s (x22 over 4m21s)  kubelet            Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "backend-7948fd6b4b-mxsk7_debug-lab(2a4be22b-7003-469f-ad45-e7c04db60fef)", container: backend)
+  Normal   Pulled     1s (x21 over 4m20s)  kubelet            Container image "docker.io/ebinterview/eb-debug-app:1.0.1" already present on machine and can be accessed by the pod
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hkkubectl -n debug-; lab descro ibe pod    get events --sortb -bu y=.lastTimestamp[?2004l
+error: unknown flag: --sort-by
+See 'kubectl describe --help' for usage.
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hkubectl -n debug-lab describe get events --sort-by=.lastTimestamp[P[35C [36D[P[35C [36D[P[35C [36D[P[35C [36D[P[35C [36D[P[35C [36D[P[35C [36D[P[35C [36D[P[35C [36D[?2004l
+LAST SEEN   TYPE      REASON              OBJECT                           MESSAGE
+5m26s       Normal    Scheduled           pod/eb-verify-probe              Successfully assigned debug-lab/eb-verify-probe to demo-control-plane
+6m2s        Normal    Scheduled           pod/reporter-6f8bff6b8d-mq6x8    Successfully assigned debug-lab/reporter-6f8bff6b8d-mq6x8 to demo-control-plane
+6m2s        Normal    Scheduled           pod/metrics-547dccf75-6qlkg      Successfully assigned debug-lab/metrics-547dccf75-6qlkg to demo-control-plane
+6m2s        Normal    Scheduled           pod/worker-5fcd6b9b6b-8gwjr      Successfully assigned debug-lab/worker-5fcd6b9b6b-8gwjr to demo-control-plane
+6m2s        Normal    Scheduled           pod/gateway-5cbdcd4bf8-gnlgj     Successfully assigned debug-lab/gateway-5cbdcd4bf8-gnlgj to demo-control-plane
+6m2s        Normal    Scheduled           pod/backend-7948fd6b4b-mxsk7     Successfully assigned debug-lab/backend-7948fd6b4b-mxsk7 to demo-control-plane
+6m3s        Normal    ScalingReplicaSet   deployment/backend               Scaled up replica set backend-7948fd6b4b from 0 to 1
+6m3s        Normal    SuccessfulCreate    replicaset/gateway-5cbdcd4bf8    Created pod: gateway-5cbdcd4bf8-gnlgj
+6m3s        Normal    ScalingReplicaSet   deployment/metrics               Scaled up replica set metrics-547dccf75 from 0 to 1
+6m3s        Normal    SuccessfulCreate    replicaset/metrics-547dccf75     Created pod: metrics-547dccf75-6qlkg
+6m3s        Normal    SuccessfulCreate    replicaset/backend-7948fd6b4b    Created pod: backend-7948fd6b4b-mxsk7
+6m3s        Normal    SuccessfulCreate    replicaset/reporter-6f8bff6b8d   Created pod: reporter-6f8bff6b8d-mq6x8
+6m3s        Normal    SuccessfulCreate    replicaset/worker-5fcd6b9b6b     Created pod: worker-5fcd6b9b6b-8gwjr
+6m3s        Normal    ScalingReplicaSet   deployment/gateway               Scaled up replica set gateway-5cbdcd4bf8 from 0 to 1
+6m3s        Normal    ScalingReplicaSet   deployment/reporter              Scaled up replica set reporter-6f8bff6b8d from 0 to 1
+6m3s        Normal    ScalingReplicaSet   deployment/worker                Scaled up replica set worker-5fcd6b9b6b from 0 to 1
+6m1s        Normal    Pulling             pod/reporter-6f8bff6b8d-mq6x8    Pulling image "docker.io/ebinterview/eb-debug-app:1.0.1"
+6m1s        Normal    Pulling             pod/gateway-5cbdcd4bf8-gnlgj     Pulling image "docker.io/ebinterview/eb-debug-app:1.0.1"
+6m1s        Normal    Pulling             pod/metrics-547dccf75-6qlkg      Pulling image "docker.io/ebinterview/eb-debug-app:1.0.1"
+6m1s        Normal    Pulling             pod/worker-5fcd6b9b6b-8gwjr      Pulling image "docker.io/ebinterview/eb-debug-app:1.0.1"
+6m1s        Normal    Pulling             pod/backend-7948fd6b4b-mxsk7     Pulling image "docker.io/ebinterview/eb-debug-app:1.0.1"
+5m56s       Normal    Pulled              pod/metrics-547dccf75-6qlkg      Successfully pulled image "docker.io/ebinterview/eb-debug-app:1.0.1" in 4.941s (4.942s including waiting). Image size: 3279587 bytes.
+5m55s       Normal    Pulled              pod/reporter-6f8bff6b8d-mq6x8    Successfully pulled image "docker.io/ebinterview/eb-debug-app:1.0.1" in 1.387s (6.099s including waiting). Image size: 3279587 bytes.
+5m53s       Normal    Pulled              pod/backend-7948fd6b4b-mxsk7     Successfully pulled image "docker.io/ebinterview/eb-debug-app:1.0.1" in 1.52s (7.614s including waiting). Image size: 3279587 bytes.
+5m52s       Normal    Pulled              pod/worker-5fcd6b9b6b-8gwjr      Successfully pulled image "docker.io/ebinterview/eb-debug-app:1.0.1" in 1.425s (9.036s including waiting). Image size: 3279587 bytes.
+5m50s       Normal    Pulled              pod/gateway-5cbdcd4bf8-gnlgj     Successfully pulled image "docker.io/ebinterview/eb-debug-app:1.0.1" in 1.445s (10.399s including waiting). Image size: 3279587 bytes.
+5m26s       Normal    Pulling             pod/eb-verify-probe              Pulling image "busybox:1.36"
+5m21s       Normal    Created             pod/eb-verify-probe              Container created
+5m21s       Normal    Started             pod/eb-verify-probe              Container started
+5m21s       Normal    Pulled              pod/eb-verify-probe              Successfully pulled image "busybox:1.36" in 4.64s (4.64s including waiting). Image size: 2217006 bytes.
+52s         Normal    Pulled              pod/reporter-6f8bff6b8d-mq6x8    Container image "docker.io/ebinterview/eb-debug-app:1.0.1" already present on machine and can be accessed by the pod
+52s         Normal    Pulled              pod/worker-5fcd6b9b6b-8gwjr      Container image "docker.io/ebinterview/eb-debug-app:1.0.1" already present on machine and can be accessed by the pod
+51s         Normal    Pulled              pod/metrics-547dccf75-6qlkg      Container image "docker.io/ebinterview/eb-debug-app:1.0.1" already present on machine and can be accessed by the pod
+50s         Normal    Pulled              pod/backend-7948fd6b4b-mxsk7     Container image "docker.io/ebinterview/eb-debug-app:1.0.1" already present on machine and can be accessed by the pod
+44s         Normal    Pulled              pod/gateway-5cbdcd4bf8-gnlgj     Container image "docker.io/ebinterview/eb-debug-app:1.0.1" already present on machine and can be accessed by the pod
+39s         Warning   Failed              pod/reporter-6f8bff6b8d-mq6x8    Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "reporter-6f8bff6b8d-mq6x8_debug-lab(a65cfcbf-d025-4434-9545-aee88fd374b1)", container: reporter)
+38s         Warning   Failed              pod/worker-5fcd6b9b6b-8gwjr      Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "worker-5fcd6b9b6b-8gwjr_debug-lab(81341580-4d00-4286-8424-326319a34c52)", container: worker)
+36s         Warning   Failed              pod/metrics-547dccf75-6qlkg      Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "metrics-547dccf75-6qlkg_debug-lab(733454ec-71ea-40ea-b28d-6b3bd0ae9cdd)", container: metrics)
+36s         Warning   Failed              pod/backend-7948fd6b4b-mxsk7     Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "backend-7948fd6b4b-mxsk7_debug-lab(2a4be22b-7003-469f-ad45-e7c04db60fef)", container: backend)
+33s         Warning   Failed              pod/gateway-5cbdcd4bf8-gnlgj     Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "gateway-5cbdcd4bf8-gnlgj_debug-lab(2c2fe2ae-4bbc-40d6-b8e4-ae80a97916ec)", container: gateway)
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h[7mgrep -rn -i -E 'runAsNonRoot|runAsUser|securityContext' .[27m[57D[27mg[27mr[27me[27mp[27m [27m-[27mr[27mn[27m [27m-[27mi[27m [27m-[27mE[27m [27m'[27mr[27mu[27mn[27mA[27ms[27mN[27mo[27mn[27mR[27mo[27mo[27mt[27m|[27mr[27mu[27mn[27mA[27ms[27mU[27ms[27me[27mr[27m|[27ms[27me[27mc[27mu[27mr[27mi[27mt[27my[27mC[27mo[27mn[27mt[27me[27mx[27mt[27m'[27m [27m.[?2004l
+./part4-session.log:65:  Warning  Failed     1s (x22 over 4m21s)  kubelet            Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "backend-7948fd6b4b-mxsk7_debug-lab(2a4be22b-7003-469f-ad45-e7c04db60fef)", container: backend)
+./part4-session.log:107:39s         Warning   Failed              pod/reporter-6f8bff6b8d-mq6x8    Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "reporter-6f8bff6b8d-mq6x8_debug-lab(a65cfcbf-d025-4434-9545-aee88fd374b1)", container: reporter)
+./part4-session.log:108:38s         Warning   Failed              pod/worker-5fcd6b9b6b-8gwjr      Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "worker-5fcd6b9b6b-8gwjr_debug-lab(81341580-4d00-4286-8424-326319a34c52)", container: worker)
+./part4-session.log:109:36s         Warning   Failed              pod/metrics-547dccf75-6qlkg      Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "metrics-547dccf75-6qlkg_debug-lab(733454ec-71ea-40ea-b28d-6b3bd0ae9cdd)", container: metrics)
+./part4-session.log:110:36s         Warning   Failed              pod/backend-7948fd6b4b-mxsk7     Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "backend-7948fd6b4b-mxsk7_debug-lab(2a4be22b-7003-469f-ad45-e7c04db60fef)", container: backend)
+./part4-session.log:111:33s         Warning   Failed              pod/gateway-5cbdcd4bf8-gnlgj     Error: container has runAsNonRoot and image has non-numeric user (nonroot), cannot verify user is non-root (pod: "gateway-5cbdcd4bf8-gnlgj_debug-lab(2c2fe2ae-4bbc-40d6-b8e4-ae80a97916ec)", container: gateway)
+./broken-chart/templates/metrics.yaml:38:          securityContext:
+./broken-chart/templates/metrics.yaml:39:            runAsNonRoot: true
+./broken-chart/templates/worker.yaml:38:          securityContext:
+./broken-chart/templates/worker.yaml:39:            runAsNonRoot: true
+./broken-chart/templates/reporter.yaml:43:          securityContext:
+./broken-chart/templates/reporter.yaml:44:            runAsNonRoot: true
+./broken-chart/templates/gateway.yaml:38:          securityContext:
+./broken-chart/templates/gateway.yaml:39:            runAsNonRoot: true
+./broken-chart/templates/backend.yaml:38:          securityContext:
+./broken-chart/templates/backend.yaml:39:            runAsNonRoot: true
+./broken-chart/templates/migrate-job.yaml:28:          securityContext:
+./broken-chart/templates/migrate-job.yaml:29:            runAsNonRoot: true
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h[7mkubectl -n debug-lab get deploy backend -o jsonpath='{.spec.template.spec.securityContext}{"\n"}{.spec.template.spec.containers[0].securityContext}{"\n"}'[27m[154D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27mg[27me[27mt[27m [27md[27me[27mp[27ml[27mo[27my[27m [27mb[27ma[27mc[27mk[27me[27mn[27md[27m [27m-[27mo[27m [27mj[27ms[27mo[27mn[27mp[27ma[27mt[27mh[27m=[27m'[27m{[27m.[27ms[27mp[27me[27mc[27m.[27mt[27me[27mm[27mp[27ml[27ma[27mt[27me[27m.[27ms[27mp[27me[27mc[27m.[27ms[27me[27mc[27mu[27mr[27mi[27mt[27my[27mC[27mo[27mn[27mt[27me[27mx[27mt[27m}[27m{[27m"[27m\[27mn[27m"[27m}[27m{[27m.[27ms[27mp[27me[27mc[27m.[27mt[27me[27mm[27mp[27ml[27ma[27mt[27me[27m.[27ms[27mp[27me[27mc[27m.[27mc[27mo[27mn[27mt[27ma[27mi[27mn[27me[27mr[27ms[27m[[27m0[27m][27m.[27ms[27me[27mc[27mu[27mr[27mi[27mt[27my[27mC[27mo[27mn[27mt[27me[27mx[27mt[27m}[27m{[27m"[27m\[27mn[27m"[27m}[27m'[?2004l
+{}
+{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true}
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h[7mdocker inspect docker.io/ebinterview/eb-debug-app:1.0.1 --format '{{.Config.User}}'[27m[83D[27md[27mo[27mc[27mk[27me[27mr[27m [27mi[27mn[27ms[27mp[27me[27mc[27mt[27m [27md[27mo[27mc[27mk[27me[27mr[27m.[27mi[27mo[27m/[27me[27mb[27mi[27mn[27mt[27me[27mr[27mv[27mi[27me[27mw[27m/[27me[27mb[27m-[27md[27me[27mb[27mu[27mg[27m-[27ma[27mp[27mp[27m:[27m1[27m.[27m0[27m.[27m1[27m [27m-[27m-[27mf[27mo[27mr[27mm[27ma[27mt[27m [27m'[27m{[27m{[27m.[27mC[27mo[27mn[27mf[27mi[27mg[27m.[27mU[27ms[27me[27mr[27m}[27m}[27m'[?2004l
+
+error: no such object: docker.io/ebinterview/eb-debug-app:1.0.1
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hddocker uma   images[?2004l
+                                                                                                                                                                          [1m[106m[30mi[0m[0m [96mInfo → [0m[0m [38;5;0m[48;5;14m U [0m In Use
+[39m[1mIMAGE[0m                                                                                                 [39m[1mID[0m             [39m[1mDISK USAGE[0m   [39m[1mCONTENT SIZE[0m   [39m[1mEXTRA[0m
+[34m[1mdemo-service:0.1.0[0m                                                                                    [39madb1ea8f0913[0m        [39m185MB[0m         [39m45.2MB[0m        
+[34m[1mdjango-s3-app:latest[0m                                                                                  [39mb3d449be8850[0m        [39m315MB[0m         [39m73.9MB[0m        
+[34m[1mfastapi-app:latest[0m                                                                                    [39m5cf35199fa56[0m        [39m248MB[0m         [39m59.7MB[0m   [38;5;0m[48;5;14m U [0m  
+[34m[1mgcr.io/k8s-minikube/kicbase@sha256:7171c97a51623558720f8e5878e4f4637da093e2f2ed589997bedc6c1549b2b1[0m   [39m7171c97a5162[0m       [39m1.84GB[0m          [39m512MB[0m   [38;5;0m[48;5;14m U [0m  
+[34m[1mkindest/node@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5[0m                  [39ma1ed56cfb0e7[0m       [39m1.34GB[0m          [39m388MB[0m   [38;5;0m[48;5;14m U [0m  
+[34m[1mnareny39/django-s3-app:latest[0m                                                                         [39mb3d449be8850[0m        [39m315MB[0m         [39m73.9MB[0m        
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hdocker images[13D             [13D[7mdocker pull docker.io/ebinterview/eb-debug-app:1.0.1[27m[52D[27md[27mo[27mc[27mk[27me[27mr[27m [27mp[27mu[27ml[27ml[27m [27md[27mo[27mc[27mk[27me[27mr[27m.[27mi[27mo[27m/[27me[27mb[27mi[27mn[27mt[27me[27mr[27mv[27mi[27me[27mw[27m/[27me[27mb[27m-[27md[27me[27mb[27mu[27mg[27m-[27ma[27mp[27mp[27m:[27m1[27m.[27m0[27m.[27m1[?2004l
+1.0.1: Pulling from ebinterview/eb-debug-app
+
+[1A[2Kc36c4b61cfba: Pulling fs layer [1B
+[1A[2Ka0a865287d07: Pulling fs layer [1B
+[1A[2K6cdd517ba905: Pulling fs layer [1B
+[1A[2Kd557676654e5: Pulling fs layer [1B
+[1A[2Kd82bc7a76a83: Pulling fs layer [1B
+[1A[2Kad7fcb30079d: Pulling fs layer [1B
+[1A[2K0f8b424aa0b9: Pulling fs layer [1B
+[1A[2K6b72b81ed966: Pulling fs layer [1B
+[1A[2K2e4cf50eeb92: Pulling fs layer [1B
+[1A[2Ke1089d61b200: Pulling fs layer [1B
+[1A[2K68e4cd60e60f: Pulling fs layer [1B
+[1A[2K0783a66ae749: Pulling fs layer [1B
+[1A[2Kefae86a3fb38: Pulling fs layer [1B[13A[2Kc36c4b61cfba: Download complete [13B[11A[2K6cdd517ba905: Download complete [11B[9A[2Kd82bc7a76a83: Download complete [9B[5A[2K2e4cf50eeb92: Download complete [5B[12A[2Ka0a865287d07: Downloading [====================>                              ]  1.049MB/2.552MB[12B[2A[2K0783a66ae749: Downloading [==================================================>]      84B/84B[2B[1A[2Kefae86a3fb38: Downloading [==================================================>]     358B/358B[1B[10A[2Kd557676654e5: Download complete [10B[6A[2K6b72b81ed966: Download complete [6B[7A[2K0f8b424aa0b9: Download complete [7B[1A[2Kefae86a3fb38: Download complete [1B[3A[2K68e4cd60e60f: Download complete [3B[12A[2Ka0a865287d07: Downloading [=========================================>         ]  2.097MB/2.552MB[12B[2A[2K0783a66ae749: Download complete [2B[8A[2Kad7fcb30079d: Download complete [8B[12A[2Ka0a865287d07: Download complete [12B[4A[2Ke1089d61b200: Download complete [4B[8A[2Kad7fcb30079d: Pull complete [8B[13A[2Kc36c4b61cfba: Extracting 1 s[13B[5A[2K2e4cf50eeb92: Pull complete [5B[13A[2Kc36c4b61cfba: Extracting 1 s[13B[13A[2Kc36c4b61cfba: Extracting 1 s[13B[13A[2Kc36c4b61cfba: Extracting 1 s[13B[13A[2Kc36c4b61cfba: Pull complete [13B[7A[2K0f8b424aa0b9: Extracting 1 s[7B[4A[2Ke1089d61b200: Pull complete [4B[9A[2Kd82bc7a76a83: Pull complete [9B[10A[2Kd557676654e5: Pull complete [10B[6A[2K6b72b81ed966: Pull complete [6B[7A[2K0f8b424aa0b9: Pull complete [7B[1A[2Kefae86a3fb38: Pull complete [1B[3A[2K68e4cd60e60f: Pull complete [3B[2A[2K0783a66ae749: Pull complete [2B[11A[2K6cdd517ba905: Pull complete [11B[12A[2Ka0a865287d07: Extracting 1 s[12B[12A[2Ka0a865287d07: Extracting 1 s[12B[12A[2Ka0a865287d07: Extracting 1 s[12B[12A[2Ka0a865287d07: Extracting 1 s[12B[12A[2Ka0a865287d07: Pull complete [12BDigest: sha256:17f41698c10f5c18693339281b92d3cfef16d9fcffcad440a24e7ab19e05c443
+Status: Downloaded newer image for ebinterview/eb-debug-app:1.0.1
+docker.io/ebinterview/eb-debug-app:1.0.1
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hdocker pull docker.io/ebinterview/eb-debug-app:1.0.1[45Dimages                                       [39D[?2004l
+                                                                                                                                                                          [1m[106m[30mi[0m[0m [96mInfo → [0m[0m [38;5;0m[48;5;14m U [0m In Use
+[39m[1mIMAGE[0m                                                                                                 [39m[1mID[0m             [39m[1mDISK USAGE[0m   [39m[1mCONTENT SIZE[0m   [39m[1mEXTRA[0m
+[34m[1mdemo-service:0.1.0[0m                                                                                    [39madb1ea8f0913[0m        [39m185MB[0m         [39m45.2MB[0m        
+[34m[1mdjango-s3-app:latest[0m                                                                                  [39mb3d449be8850[0m        [39m315MB[0m         [39m73.9MB[0m        
+[34m[1mebinterview/eb-debug-app:1.0.1[0m                                                                        [39m17f41698c10f[0m       [39m14.5MB[0m         [39m3.28MB[0m        
+[34m[1mfastapi-app:latest[0m                                                                                    [39m5cf35199fa56[0m        [39m248MB[0m         [39m59.7MB[0m   [38;5;0m[48;5;14m U [0m  
+[34m[1mgcr.io/k8s-minikube/kicbase@sha256:7171c97a51623558720f8e5878e4f4637da093e2f2ed589997bedc6c1549b2b1[0m   [39m7171c97a5162[0m       [39m1.84GB[0m          [39m512MB[0m   [38;5;0m[48;5;14m U [0m  
+[34m[1mkindest/node@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5[0m                  [39ma1ed56cfb0e7[0m       [39m1.34GB[0m          [39m388MB[0m   [38;5;0m[48;5;14m U [0m  
+[34m[1mnareny39/django-s3-app:latest[0m                                                                         [39mb3d449be8850[0m        [39m315MB[0m         [39m73.9MB[0m        
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hdocker imagespull docker.io/ebinterview/eb-debug-app:1.0.1[45Dimages                                       [39Dnspect docker.io/ebinterview/eb-debug-app:1.0.1 --format '{{.Config.User}}'[?2004l
+nonroot
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h[7mdocker create --name eb-peek docker.io/ebinterview/eb-debug-app:1.0.1 /app[27m[74D[27md[27mo[27mc[27mk[27me[27mr[27m [27mc[27mr[27me[27ma[27mt[27me[27m [27m-[27m-[27mn[27ma[27mm[27me[27m [27me[27mb[27m-[27mp[27me[27me[27mk[27m [27md[27mo[27mc[27mk[27me[27mr[27m.[27mi[27mo[27m/[27me[27mb[27mi[27mn[27mt[27me[27mr[27mv[27mi[27me[27mw[27m/[27me[27mb[27m-[27md[27me[27mb[27mu[27mg[27m-[27ma[27mp[27mp[27m:[27m1[27m.[27m0[27m.[27m1[27m [27m/[27ma[27mp[27mp[?2004l
+0fbac7044f28a8e490d8b97b45cf9031001b9bcccfc7a0883851f68275c29333
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h[7mdocker cp eb-peek:/etc/passwd - | grep -a nonroot[27m[49D[27md[27mo[27mc[27mk[27me[27mr[27m [27mc[27mp[27m [27me[27mb[27m-[27mp[27me[27me[27mk[27m:[27m/[27me[27mt[27mc[27m/[27mp[27ma[27ms[27ms[27mw[27md[27m [27m-[27m [27m|[27m [27mg[27mr[27me[27mp[27m [27m-[27ma[27m [27mn[27mo[27mn[27mr[27mo[27mo[27mt[?2004l
+nonroot:x:65532:65532:nonroot:/home/nonroot:/sbin/nologin
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h[7mdocker rm eb-peek[27m[17D[27md[27mo[27mc[27mk[27me[27mr[27m [27mr[27mm[27m [27me[27mb[27m-[27mp[27me[27me[27mk[?2004l
+eb-peek
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hccd broken-chart[1m/[0m[0m [?2004l
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hccat values.yaml[1m [0m[0m [?2004l
+# Debug lab — values.
+#
+# Lab rules (also in the assignment):
+#   * You may change anything in this chart — values or templates.
+#   * You may NOT change image.repository or image.tag.
+#   * You may NOT modify anything under ../cluster-state/.
+#   * You may NOT delete workloads to make a symptom disappear.
+
+image:
+  repository: docker.io/ebinterview/eb-debug-app
+  tag: "1.0.1"
+  pullPolicy: IfNotPresent
+
+common:
+  # Every workload serves plain HTTP on this port.
+  port: 8080
+
+backend:
+  replicas: 1
+  env:
+    APP_MODE: "api"
+    APP_NAME: "backend"
+    VERSION: "2.0.0"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+
+gateway:
+  replicas: 1
+  env:
+    APP_MODE: "gateway"
+    APP_NAME: "gateway"
+    VERSION: "2.0.0"
+    BACKEND_URL: "http://backend.default.svc:8080"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+
+worker:
+  replicas: 1
+  env:
+    APP_MODE: "worker"
+    APP_NAME: "worker"
+    VERSION: "2.0.0"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+
+reporter:
+  replicas: 1
+  serviceAccountName: reporter
+  env:
+    APP_MODE: "reporter"
+    APP_NAME: "reporter"
+    VERSION: "2.0.0"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+
+metrics:
+  replicas: 1
+  env:
+    APP_MODE: "api"
+    APP_NAME: "metrics"
+    VERSION: "2.0.0"
+  resources:
+    requests:
+      cpu: "2"
+      memory: "64Mi"
+    limits:
+      cpu: "4"
+      memory: "128Mi"
+
+migrate:
+  enabled: true
+  backoffLimit: 2
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7msed -n 25,50p templates/backend.yaml[27m[36D[27ms[27me[27md[27m [27m-[27mn[27m [27m2[27m5[27m,[27m5[27m0[27mp[27m [27mt[27me[27mm[27mp[27ml[27ma[27mt[27me[27ms[27m/[27mb[27ma[27mc[27mk[27me[27mn[27md[27m.[27my[27ma[27mm[27ml[?2004l
+              containerPort: {{ .Values.common.port }}
+          env:
+            {{- range $name, $value := .Values.backend.env }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.common.port }}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm template lab . -n debug-lab | grep -n -E 'runAsUser|runAsGroup'[27m[68D[27mh[27me[27ml[27mm[27m [27mt[27me[27mm[27mp[27ml[27ma[27mt[27me[27m [27ml[27ma[27mb[27m [27m.[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m|[27m [27mg[27mr[27me[27mp[27m [27m-[27mn[27m [27m-[27mE[27m [27m'[27mr[27mu[27mn[27mA[27ms[27mU[27ms[27me[27mr[27m|[27mr[27mu[27mn[27mA[27ms[27mG[27mr[27mo[27mu[27mp[27m'[?2004l
+153:            runAsUser: 65532
+154:            runAsGroup: 65532
+216:            runAsUser: 65532
+217:            runAsGroup: 65532
+277:            runAsUser: 65532
+278:            runAsGroup: 65532
+343:            runAsUser: 65532
+344:            runAsGroup: 65532
+404:            runAsUser: 65532
+405:            runAsGroup: 65532
+450:            runAsUser: 65532
+451:            runAsGroup: 65532
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm -n debug-lab list[27m[22D[27mh[27me[27ml[27mm[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27ml[27mi[27ms[27mt[?2004l
+[1mNAME[22m     	[1mNAMESPACE[22m	[1mREVISION[22m	[1mUPDATED[22m                             	[1mSTATUS[22m	[1mCHART[22m          	[1mAPP VERSION[22m
+debug-lab	[36mdebug-lab[0m	1       	2026-11-07 00:03:51.485473 +0530 IST	[31mfailed[0m	debug-lab-2.0.0	1.0.1      
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm upgrade <release> . -n debug-lab[27m[37D[27mh[27me[27ml[27mm[27m [27mu[27mp[27mg[27mr[27ma[27md[27me[27m [27m<[27mr[27me[27ml[27me[27ma[27ms[27me[27m>[27m [27m.[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[?2004l
+zsh: no such file or directory: release
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hhelm upgrade <release> . -n debug-lab[P[15C [16D[P[15C [16D[P[15C [16D[P[15C [16D[P[15C [16D[P[15C [16D[P[15C [16D[P[15C [16D[P[15C [16Dd . -n debug-lab[15De . -n debug-lab[15Db . -n debug-lab[15Du . -n debug-lab[15Dg . -n debug-lab[15D- . -n debug-lab[15Dl . -n debug-lab[15Da . -n debug-lab[15Db . -n debug-lab[15D[?2004l
+level=WARN msg="upgrade failed" name=debug-lab error="failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch \"migrate\" is invalid: spec.template.spec.restartPolicy: Required value: valid values: \"OnFailure\", \"Never\""
+Error: UPGRADE FAILED: failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm -n debug-lab history debug-lab[27m[35D[27mh[27me[27ml[27mm[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27mh[27mi[27ms[27mt[27mo[27mr[27my[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[?2004l
+REVISION	UPDATED                 	STATUS	CHART          	APP VERSION	DESCRIPTION                                                                                                                                                                                                                                          
+1       	Sat Nov  7 00:03:51 2026	failed	debug-lab-2.0.0	1.0.1      	Release "debug-lab" failed: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"                           
+2       	Sat Nov  7 00:40:36 2026	failed	debug-lab-2.0.0	1.0.1      	Upgrade "debug-lab" failed: failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm -n debug-lab status debug-lab[27m[34D[27mh[27me[27ml[27mm[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27ms[27mt[27ma[27mt[27mu[27ms[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[?2004l
+NAME: debug-lab
+LAST DEPLOYED: Sat Nov  7 00:40:36 2026
+NAMESPACE: [36mdebug-lab[0m
+STATUS: [31mfailed[0m
+REVISION: 2
+DESCRIPTION: Upgrade "debug-lab" failed: failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"
+RESOURCES:
+==> v1/RoleBinding
+NAME            ROLE                 AGE
+reporter-read   Role/reporter-read   37m
+
+==> v1/Service
+NAME      TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+backend   ClusterIP   10.96.16.63   <none>        8080/TCP   37m
+gateway   ClusterIP   10.96.86.190   <none>   80/TCP   37m
+reporter   ClusterIP   10.96.90.25   <none>   8080/TCP   37m
+
+==> v1/Deployment
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+backend   0/1     1            0           37m
+gateway   0/1   1     0     37m
+metrics   0/1   1     0     37m
+reporter   0/1   1     0     37m
+worker   0/1   1     0     37m
+
+==> v1/Pod(related)
+NAME                       READY   STATUS                       RESTARTS   AGE
+backend-6865788b54-qpbhw   0/1     Running                      0          40s
+backend-7948fd6b4b-mxsk7   0/1     CreateContainerConfigError   0          37m
+gateway-5cbdcd4bf8-gnlgj   0/1   CreateContainerConfigError   0     37m
+gateway-676cfd854-44286    0/1   Running                      0     40s
+metrics-547dccf75-6qlkg    0/1   CreateContainerConfigError   0     37m
+metrics-749f5448c9-qzxpp   0/1   Running                      0     40s
+reporter-6f8bff6b8d-mq6x8   0/1   CreateContainerConfigError   0     37m
+reporter-74bf5fb96-w4whh    0/1   Running                      0     40s
+worker-5fcd6b9b6b-8gwjr   0/1   CreateContainerConfigError   0             37m
+worker-644f6d84cd-zjczr   0/1   Running                      3 (26s ago)   40s
+
+==> v1/ServiceAccount
+NAME       AGE
+reporter   37m
+
+==> v1/Role
+NAME            CREATED AT
+reporter-read   2026-11-06T18:33:51Z
+
+
+TEST SUITE: None
+NOTES:
+debug-lab installed into namespace debug-lab.
+
+Goal state:
+  * migrate Job: Completed
+  * backend, gateway, worker, reporter, metrics: all pods Running and 1/1 Ready
+  * gateway /status reports {"self":"ok","backend":"ok",...}
+
+Check your progress at any time:
+  ./scenario.sh verify
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hccd ../[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hcd ../helm -n debug-lab status debug-lab[16Dhistory debug-lab[30Dupgrade[13P[10C . -n debug-lab[24D<release>[15C[24D[15P[9C . -n debug-lab[24D<release>[15C[32D[20P[12C list               [15D[?2004l
+[1mNAME[22m     	[1mNAMESPACE[22m	[1mREVISION[22m	[1mUPDATED[22m                            	[1mSTATUS[22m	[1mCHART[22m          	[1mAPP VERSION[22m
+debug-lab	[36mdebug-lab[0m	2       	2026-11-07 00:40:36.70323 +0530 IST	[31mfailed[0m	debug-lab-2.0.0	1.0.1      
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hhelm -n debug-lab list[22Dcd ../                [16Dhelm -n debug-lab status debug-lab[16Dhistory debug-lab[30Dupgrade[13P[10C . -n debug-lab[24D<release>[15C[24D[15P[9C . -n debug-lab[?2004l
+Error: unable to detect chart at /Users/rythmos/Downloads/eb-devops-takehome-v2/repo/lab/Chart.yaml: open /Users/rythmos/Downloads/eb-devops-takehome-v2/repo/lab/Chart.yaml: no such file or directory
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hccd broken-chart[1m/[0m[0m [?2004l
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hcd broken-chart[15Dhelm upgrade debug-lab . -n debug-lab[32D[20P[12C list               [15D[17Dupgrade debug-lab . -n debug-lab[?2004l
+level=WARN msg="upgrade failed" name=debug-lab error="failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch \"migrate\" is invalid: spec.template.spec.restartPolicy: Required value: valid values: \"OnFailure\", \"Never\""
+Error: UPGRADE FAILED: failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hhelm upgrade debug-lab . -n debug-lab[37Dcd broken-chart                      [22D[15Dhelm upgrade debug-lab . -n debug-lab[32D[20P[12C list               [15D[22Dcd ../                [16Dhelm -n debug-lab list[17Dupgrade debug-lab . -n debug-lab[32D[20P[12C list               [15D[22Dcd ../                [16Dhelm -n debug-lab status debug-lab[16Dhistory debug-lab[?2004l
+REVISION	UPDATED                 	STATUS	CHART          	APP VERSION	DESCRIPTION                                                                                                                                                                                                                                          
+1       	Sat Nov  7 00:03:51 2026	failed	debug-lab-2.0.0	1.0.1      	Release "debug-lab" failed: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"                           
+2       	Sat Nov  7 00:40:36 2026	failed	debug-lab-2.0.0	1.0.1      	Upgrade "debug-lab" failed: failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"
+3       	Sat Nov  7 00:43:20 2026	failed	debug-lab-2.0.0	1.0.1      	Upgrade "debug-lab" failed: failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hhelm -n debug-lab history debug-lab[30Dupgrade[13P[10C . -n debug-lab[32D[20P[12C history debug-lab  [30Dupgrade[13P[10C . -n debug-lab[37Dcd broken-chart                      [22D[15Dhelm upgrade debug-lab . -n debug-lab[32D[20P[12C list               [15D[22Dcd ../                [16Dhelm -n debug-lab status debug-lab[16Dhistory debug-lab[17Dstatus[P[10C [?2004l
+NAME: debug-lab
+LAST DEPLOYED: Sat Nov  7 00:43:20 2026
+NAMESPACE: [36mdebug-lab[0m
+STATUS: [31mfailed[0m
+REVISION: 3
+DESCRIPTION: Upgrade "debug-lab" failed: failed to create resource: server-side apply failed for object debug-lab/migrate batch/v1, Kind=Job: Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value: valid values: "OnFailure", "Never"
+RESOURCES:
+==> v1/Deployment
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+backend   0/1     1            0           39m
+gateway   0/1   1     0     39m
+metrics   0/1   1     0     39m
+reporter   0/1   1     0     39m
+worker   0/1   1     0     39m
+
+==> v1/Pod(related)
+NAME                       READY   STATUS                       RESTARTS   AGE
+backend-6865788b54-qpbhw   0/1     Running                      0          3m9s
+backend-7948fd6b4b-mxsk7   0/1     CreateContainerConfigError   0          39m
+gateway-5cbdcd4bf8-gnlgj   0/1   CreateContainerConfigError   0     39m
+gateway-676cfd854-44286    0/1   Running                      0     3m9s
+metrics-547dccf75-6qlkg    0/1   CreateContainerConfigError   0     39m
+metrics-749f5448c9-qzxpp   0/1   Running                      0     3m9s
+reporter-6f8bff6b8d-mq6x8   0/1   CreateContainerConfigError   0     39m
+reporter-74bf5fb96-w4whh    0/1   Running                      0     3m9s
+worker-5fcd6b9b6b-8gwjr   0/1   CreateContainerConfigError   0            39m
+worker-644f6d84cd-zjczr   0/1   CrashLoopBackOff             5 (6s ago)   3m9s
+
+==> v1/ServiceAccount
+NAME       AGE
+reporter   39m
+
+==> v1/Role
+NAME            CREATED AT
+reporter-read   2026-11-06T18:33:51Z
+
+==> v1/RoleBinding
+NAME            ROLE                 AGE
+reporter-read   Role/reporter-read   39m
+
+==> v1/Service
+NAME      TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
+backend   ClusterIP   10.96.16.63   <none>        8080/TCP   39m
+gateway   ClusterIP   10.96.86.190   <none>   80/TCP   39m
+reporter   ClusterIP   10.96.90.25   <none>   8080/TCP   39m
+
+
+TEST SUITE: None
+NOTES:
+debug-lab installed into namespace debug-lab.
+
+Goal state:
+  * migrate Job: Completed
+  * backend, gateway, worker, reporter, metrics: all pods Running and 1/1 Ready
+  * gateway /status reports {"self":"ok","backend":"ok",...}
+
+Check your progress at any time:
+  ./scenario.sh verify
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm template debug-lab . -n debug-lab | grep -n -B3 -A3 restartPolicy[27m[70D[27mh[27me[27ml[27mm[27m [27mt[27me[27mm[27mp[27ml[27ma[27mt[27me[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m.[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m|[27m [27mg[27mr[27me[27mp[27m [27m-[27mn[27m [27m-[27mB[27m3[27m [27m-[27mA[27m3[27m [27mr[27me[27ms[27mt[27ma[27mr[27mt[27mP[27mo[27ml[27mi[27mc[27my[?2004l
+433-      labels:
+434-        app: migrate
+435-    spec:
+436:      restartPolicy: OnFailure
+437-      containers:
+438-        - name: migrate
+439-          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm upgrade debug-lab . -n debug-lab --dry-run=server[27m[54D[27mh[27me[27ml[27mm[27m [27mu[27mp[27mg[27mr[27ma[27md[27me[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m.[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m-[27m-[27md[27mr[27my[27m-[27mr[27mu[27mn[27m=[27ms[27me[27mr[27mv[27me[27mr[?2004l
+Release "debug-lab" has been upgraded. Happy Helming!
+NAME: debug-lab
+LAST DEPLOYED: Sat Nov  7 00:45:25 2026
+NAMESPACE: [36mdebug-lab[0m
+STATUS: [33mpending-upgrade[0m
+REVISION: 4
+DESCRIPTION: Dry run complete
+TEST SUITE: None
+HOOKS:
+MANIFEST:
+---
+# Source: debug-lab/templates/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reporter
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+
+---
+# Source: debug-lab/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: reporter-read
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+---
+# Source: debug-lab/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: reporter-read
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: reporter-read
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: debug-lab
+
+---
+# Source: debug-lab/templates/backend.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+---
+# Source: debug-lab/templates/gateway.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  selector:
+    app: gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+
+---
+# Source: debug-lab/templates/reporter.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: reporter
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  selector:
+    app: reporter
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+---
+# Source: debug-lab/templates/backend.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      containers:
+        - name: backend
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: "api"
+            - name: APP_NAME
+              value: "backend"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/gateway.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      containers:
+        - name: gateway
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: "gateway"
+            - name: APP_NAME
+              value: "gateway"
+            - name: BACKEND_URL
+              value: "http://backend.default.svc:8080"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/metrics.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics
+  labels:
+    app: metrics
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics
+  template:
+    metadata:
+      labels:
+        app: metrics
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      containers:
+        - name: metrics
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: "api"
+            - name: APP_NAME
+              value: "metrics"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: "4"
+              memory: 128Mi
+            requests:
+              cpu: "2"
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/reporter.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reporter
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reporter
+  template:
+    metadata:
+      labels:
+        app: reporter
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      serviceAccountName: reporter
+      containers:
+        - name: reporter
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: APP_MODE
+              value: "reporter"
+            - name: APP_NAME
+              value: "reporter"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/worker.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      containers:
+        - name: worker
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: "worker"
+            - name: APP_NAME
+              value: "worker"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/migrate-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  labels:
+    app: migrate
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: migrate
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APP_MODE
+              value: "migrate"
+            - name: APP_NAME
+              value: "migrate"
+            - name: VERSION
+              value: "2.0.0"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+
+NOTES:
+debug-lab installed into namespace debug-lab.
+
+Goal state:
+  * migrate Job: Completed
+  * backend, gateway, worker, reporter, metrics: all pods Running and 1/1 Ready
+  * gateway /status reports {"self":"ok","backend":"ok",...}
+
+Check your progress at any time:
+  ./scenario.sh verify
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm upgrade debug-lab . -n debug-lab[27m[37D[27mh[27me[27ml[27mm[27m [27mu[27mp[27mg[27mr[27ma[27md[27me[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m.[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[?2004l
+Release "debug-lab" has been upgraded. Happy Helming!
+NAME: debug-lab
+LAST DEPLOYED: Sat Nov  7 00:45:58 2026
+NAMESPACE: [36mdebug-lab[0m
+STATUS: [32mdeployed[0m
+REVISION: 4
+DESCRIPTION: Upgrade complete
+TEST SUITE: None
+NOTES:
+debug-lab installed into namespace debug-lab.
+
+Goal state:
+  * migrate Job: Completed
+  * backend, gateway, worker, reporter, metrics: all pods Running and 1/1 Ready
+  * gateway /status reports {"self":"ok","backend":"ok",...}
+
+Check your progress at any time:
+  ./scenario.sh verify
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mkubectl -n debug-lab get job,pods[27m[33D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27mg[27me[27mt[27m [27mj[27mo[27mb[27m,[27mp[27mo[27md[27ms[?2004l
+NAME                STATUS     COMPLETIONS   DURATION   AGE
+job.batch/migrate   Complete   1/1           6s         9s
+
+NAME                            READY   STATUS                       RESTARTS        AGE
+pod/backend-6865788b54-qpbhw    0/1     Running                      0               5m30s
+pod/backend-7948fd6b4b-mxsk7    0/1     CreateContainerConfigError   0               42m
+pod/gateway-5cbdcd4bf8-gnlgj    0/1     CreateContainerConfigError   0               42m
+pod/gateway-676cfd854-44286     0/1     Running                      0               5m30s
+pod/metrics-547dccf75-6qlkg     0/1     CreateContainerConfigError   0               42m
+pod/metrics-749f5448c9-qzxpp    0/1     Running                      0               5m30s
+pod/migrate-spqj8               0/1     Completed                    0               9s
+pod/reporter-6f8bff6b8d-mq6x8   0/1     CreateContainerConfigError   0               42m
+pod/reporter-74bf5fb96-w4whh    0/1     Running                      0               5m30s
+pod/worker-5fcd6b9b6b-8gwjr     0/1     CreateContainerConfigError   0               42m
+pod/worker-644f6d84cd-zjczr     0/1     CrashLoopBackOff             5 (2m27s ago)   5m30s
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hkubectl -n debug-lab get job,pods[?2004l
+NAME                STATUS     COMPLETIONS   DURATION   AGE
+job.batch/migrate   Complete   1/1           6s         41s
+
+NAME                            READY   STATUS                       RESTARTS      AGE
+pod/backend-6865788b54-qpbhw    0/1     Running                      0             6m2s
+pod/backend-7948fd6b4b-mxsk7    0/1     CreateContainerConfigError   0             42m
+pod/gateway-5cbdcd4bf8-gnlgj    0/1     CreateContainerConfigError   0             42m
+pod/gateway-676cfd854-44286     0/1     Running                      0             6m2s
+pod/metrics-547dccf75-6qlkg     0/1     CreateContainerConfigError   0             42m
+pod/metrics-749f5448c9-qzxpp    0/1     Running                      0             6m2s
+pod/migrate-spqj8               0/1     Completed                    0             41s
+pod/reporter-6f8bff6b8d-mq6x8   0/1     CreateContainerConfigError   0             42m
+pod/reporter-74bf5fb96-w4whh    0/1     Running                      0             6m2s
+pod/worker-5fcd6b9b6b-8gwjr     0/1     CreateContainerConfigError   0             42m
+pod/worker-644f6d84cd-zjczr     0/1     CrashLoopBackOff             6 (17s ago)   6m2s
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mkubectl -n debug-lab logs job/migrate[27m[37D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27ml[27mo[27mg[27ms[27m [27mj[27mo[27mb[27m/[27mm[27mi[27mg[27mr[27ma[27mt[27me[?2004l
+2026/11/06 19:16:00 eb-debug-app 2.0.0: migration starting (app=migrate, 2s of very important work)
+2026/11/06 19:16:02 migration complete
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mkubectl -n debug-lab get pods[27m[29D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27mg[27me[27mt[27m [27mp[27mo[27md[27ms[?2004l
+NAME                        READY   STATUS                       RESTARTS        AGE
+backend-6865788b54-qpbhw    0/1     Running                      0               7m57s
+backend-7948fd6b4b-mxsk7    0/1     CreateContainerConfigError   0               44m
+gateway-5cbdcd4bf8-gnlgj    0/1     CreateContainerConfigError   0               44m
+gateway-676cfd854-44286     0/1     Running                      0               7m57s
+metrics-547dccf75-6qlkg     0/1     CreateContainerConfigError   0               44m
+metrics-749f5448c9-qzxpp    0/1     Running                      0               7m57s
+migrate-spqj8               0/1     Completed                    0               2m36s
+reporter-6f8bff6b8d-mq6x8   0/1     CreateContainerConfigError   0               44m
+reporter-74bf5fb96-w4whh    0/1     Running                      0               7m57s
+worker-5fcd6b9b6b-8gwjr     0/1     CreateContainerConfigError   0               44m
+worker-644f6d84cd-zjczr     0/1     CrashLoopBackOff             6 (2m12s ago)   7m57s
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mkubectl -n debug-lab logs backend-6865788b54-qpbhw[27m[50D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27ml[27mo[27mg[27ms[27m [27mb[27ma[27mc[27mk[27me[27mn[27md[27m-[27m6[27m8[27m6[27m5[27m7[27m8[27m8[27mb[27m5[27m4[27m-[27mq[27mp[27mb[27mh[27mw[?2004l
+2026/11/06 19:10:38 eb-debug-app 2.0.0 starting: mode=api pod=backend-6865788b54-qpbhw listening on :8081 (image default is 8081; set PORT to override)
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mkubectl -n debug-lab describe pod backend-6865788b54-qpbhw | sed -n '/Events:/,$p'[27m[82D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27md[27me[27ms[27mc[27mr[27mi[27mb[27me[27m [27mp[27mo[27md[27m [27mb[27ma[27mc[27mk[27me[27mn[27md[27m-[27m6[27m8[27m6[27m5[27m7[27m8[27m8[27mb[27m5[27m4[27m-[27mq[27mp[27mb[27mh[27mw[27m [27m|[27m [27ms[27me[27md[27m [27m-[27mn[27m [27m'[27m/[27mE[27mv[27me[27mn[27mt[27ms[27m:[27m/[27m,[27m$[27mp[27m'[?2004l
+Events:
+  Type     Reason     Age                     From               Message
+  ----     ------     ----                    ----               -------
+  Normal   Scheduled  8m25s                   default-scheduler  Successfully assigned debug-lab/backend-6865788b54-qpbhw to demo-control-plane
+  Normal   Pulled     8m24s                   kubelet            Container image "docker.io/ebinterview/eb-debug-app:1.0.1" already present on machine and can be accessed by the pod
+  Normal   Created    8m24s                   kubelet            Container created
+  Normal   Started    8m24s                   kubelet            Container started
+  Warning  Unhealthy  3m16s (x63 over 8m19s)  kubelet            Readiness probe failed: Get "http://10.244.0.16:8080/healthz": dial tcp 10.244.0.16:8080: connect: connection refused
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mkubectl -n debug-lab logs worker-644f6d84cd-zjczr --previous[27m[60D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27ml[27mo[27mg[27ms[27m [27mw[27mo[27mr[27mk[27me[27mr[27m-[27m6[27m4[27m4[27mf[27m6[27md[27m8[27m4[27mc[27md[27m-[27mz[27mj[27mc[27mz[27mr[27m [27m-[27m-[27mp[27mr[27me[27mv[27mi[27mo[27mu[27ms[?2004l
+2026/11/06 19:16:22 FATAL: worker could not initialise its cache: mkdir /var/cache/app: read-only file system — the process needs a writable directory at /var/cache/app (mount a volume there, or set CACHE_DIR)
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mfor p in gateway-676cfd854-44286 metrics-749f5448c9-qzxpp reporter-74bf5fb96-w4whh; do[27m
+[7m  echo "=== $p"; kubectl -n debug-lab logs $p[27m[K
+[7m  kubectl -n debug-lab describe pod $p | grep -E 'Readiness|Liveness|Port|PORT'[27m[K
+[7mdone[27m[K
+[7mkubectl -n debug-lab get endpoints[27m[K[4A[10C[27mf[27mo[27mr[27m [27mp[27m [27mi[27mn[27m [27mg[27ma[27mt[27me[27mw[27ma[27my[27m-[27m6[27m7[27m6[27mc[27mf[27md[27m8[27m5[27m4[27m-[27m4[27m4[27m2[27m8[27m6[27m [27mm[27me[27mt[27mr[27mi[27mc[27ms[27m-[27m7[27m4[27m9[27mf[27m5[27m4[27m4[27m8[27mc[27m9[27m-[27mq[27mz[27mx[27mp[27mp[27m [27mr[27me[27mp[27mo[27mr[27mt[27me[27mr[27m-[27m7[27m4[27mb[27mf[27m5[27mf[27mb[27m9[27m6[27m-[27mw[27m4[27mw[27mh[27mh[27m;[27m [27md[27mo[1B[27m [27m [27me[27mc[27mh[27mo[27m [27m"[27m=[27m=[27m=[27m [27m$[27mp[27m"[27m;[27m [27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27ml[27mo[27mg[27ms[27m [27m$[27mp[1B[27m [27m [27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27md[27me[27ms[27mc[27mr[27mi[27mb[27me[27m [27mp[27mo[27md[27m [27m$[27mp[27m [27m|[27m [27mg[27mr[27me[27mp[27m [27m-[27mE[27m [27m'[27mR[27me[27ma[27md[27mi[27mn[27me[27ms[27ms[27m|[27mL[27mi[27mv[27me[27mn[27me[27ms[27ms[27m|[27mP[27mo[27mr[27mt[27m|[27mP[27mO[27mR[27mT[27m'[1B[27md[27mo[27mn[27me[1B[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27mg[27me[27mt[27m [27me[27mn[27md[27mp[27mo[27mi[27mn[27mt[27ms[?2004l
+=== gateway-676cfd854-44286
+2026/11/06 19:10:38 eb-debug-app 2.0.0 starting: mode=gateway pod=gateway-676cfd854-44286 listening on :8081 (image default is 8081; set PORT to override)
+    Port:           8080/TCP (http)
+    Host Port:      0/TCP (http)
+    Readiness:  http-get http://:8080/healthz delay=3s timeout=3s period=5s #success=1 #failure=3
+  Warning  Unhealthy  4m59s (x64 over 10m)  kubelet            Readiness probe failed: Get "http://10.244.0.20:8080/healthz": dial tcp 10.244.0.20:8080: connect: connection refused
+=== metrics-749f5448c9-qzxpp
+2026/11/06 19:10:38 eb-debug-app 2.0.0 starting: mode=api pod=metrics-749f5448c9-qzxpp listening on :8081 (image default is 8081; set PORT to override)
+    Port:           8080/TCP (http)
+    Host Port:      0/TCP (http)
+    Readiness:  http-get http://:8080/healthz delay=3s timeout=3s period=5s #success=1 #failure=3
+  Warning  Unhealthy  1s (x124 over 10m)  kubelet            Readiness probe failed: Get "http://10.244.0.18:8080/healthz": dial tcp 10.244.0.18:8080: connect: connection refused
+=== reporter-74bf5fb96-w4whh
+2026/11/06 19:10:38 eb-debug-app 2.0.0 starting: mode=reporter pod=reporter-74bf5fb96-w4whh listening on :8081 (image default is 8081; set PORT to override)
+    Port:           8080/TCP (http)
+    Host Port:      0/TCP (http)
+    Readiness:  http-get http://:8080/healthz delay=3s timeout=3s period=5s #success=1 #failure=3
+  Warning  Unhealthy  1s (x126 over 10m)  kubelet            Readiness probe failed: Get "http://10.244.0.17:8080/healthz": dial tcp 10.244.0.17:8080: connect: connection refused
+[33;1mWarning:[0m v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME       ENDPOINTS   AGE
+backend                46m
+gateway                46m
+reporter               46m
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mgrep -n -i -E 'port|PORT' templates/*.yaml[27m[42D[27mg[27mr[27me[27mp[27m [27m-[27mn[27m [27m-[27mi[27m [27m-[27mE[27m [27m'[27mp[27mo[27mr[27mt[27m|[27mP[27mO[27mR[27mT[27m'[27m [27mt[27me[27mm[27mp[27ml[27ma[27mt[27me[27ms[27m/[27m*[27m.[27my[27ma[27mm[27ml[?2004l
+templates/backend.yaml:23:          ports:
+templates/backend.yaml:25:              containerPort: {{ .Values.common.port }}
+templates/backend.yaml:34:              port: {{ .Values.common.port }}
+templates/backend.yaml:59:  ports:
+templates/backend.yaml:61:      port: 8080
+templates/backend.yaml:62:      targetPort: {{ .Values.common.port }}
+templates/gateway.yaml:23:          ports:
+templates/gateway.yaml:25:              containerPort: {{ .Values.common.port }}
+templates/gateway.yaml:34:              port: {{ .Values.common.port }}
+templates/gateway.yaml:59:  ports:
+templates/gateway.yaml:61:      port: 80
+templates/gateway.yaml:62:      targetPort: {{ .Values.common.port }}
+templates/metrics.yaml:23:          ports:
+templates/metrics.yaml:25:              containerPort: {{ .Values.common.port }}
+templates/metrics.yaml:34:              port: {{ .Values.common.port }}
+templates/rbac.yaml:4:  name: reporter
+templates/rbac.yaml:6:    app: reporter
+templates/rbac.yaml:12:  name: reporter-read
+templates/rbac.yaml:14:    app: reporter
+templates/rbac.yaml:24:  name: reporter-read
+templates/rbac.yaml:26:    app: reporter
+templates/rbac.yaml:31:  name: reporter-read
+templates/reporter.yaml:4:  name: reporter
+templates/reporter.yaml:6:    app: reporter
+templates/reporter.yaml:9:  replicas: {{ .Values.reporter.replicas }}
+templates/reporter.yaml:12:      app: reporter
+templates/reporter.yaml:16:        app: reporter
+templates/reporter.yaml:19:      serviceAccountName: {{ .Values.reporter.serviceAccountName }}
+templates/reporter.yaml:21:        - name: reporter
+templates/reporter.yaml:24:          ports:
+templates/reporter.yaml:26:              containerPort: {{ .Values.common.port }}
+templates/reporter.yaml:32:            {{- range $name, $value := .Values.reporter.env }}
+templates/reporter.yaml:39:              port: {{ .Values.common.port }}
+templates/reporter.yaml:52:            {{- toYaml .Values.reporter.resources | nindent 12 }}
+templates/reporter.yaml:57:  name: reporter
+templates/reporter.yaml:59:    app: reporter
+templates/reporter.yaml:63:    app: reporter
+templates/reporter.yaml:64:  ports:
+templates/reporter.yaml:66:      port: 8080
+templates/reporter.yaml:67:      targetPort: {{ .Values.common.port }}
+templates/worker.yaml:23:          ports:
+templates/worker.yaml:25:              containerPort: {{ .Values.common.port }}
+templates/worker.yaml:34:              port: {{ .Values.common.port }}
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm template debug-lab . -n debug-lab > /dev/null[27m[50D[27mh[27me[27ml[27mm[27m [27mt[27me[27mm[27mp[27ml[27ma[27mt[27me[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m.[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m>[27m [27m/[27md[27me[27mv[27m/[27mn[27mu[27ml[27ml[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm upgrade debug-lab . -n debug-lab --dry-run=server[27m[54D[27mh[27me[27ml[27mm[27m [27mu[27mp[27mg[27mr[27ma[27md[27me[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m.[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m-[27m-[27md[27mr[27my[27m-[27mr[27mu[27mn[27m=[27ms[27me[27mr[27mv[27me[27mr[?2004l
+Release "debug-lab" has been upgraded. Happy Helming!
+NAME: debug-lab
+LAST DEPLOYED: Sat Nov  7 01:00:12 2026
+NAMESPACE: [36mdebug-lab[0m
+STATUS: [33mpending-upgrade[0m
+REVISION: 5
+DESCRIPTION: Dry run complete
+TEST SUITE: None
+HOOKS:
+MANIFEST:
+---
+# Source: debug-lab/templates/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: reporter
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+
+---
+# Source: debug-lab/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: reporter-read
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+---
+# Source: debug-lab/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: reporter-read
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: reporter-read
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: debug-lab
+
+---
+# Source: debug-lab/templates/backend.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+---
+# Source: debug-lab/templates/gateway.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  selector:
+    app: gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+---
+# Source: debug-lab/templates/reporter.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: reporter
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  selector:
+    app: reporter
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+---
+# Source: debug-lab/templates/backend.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      containers:
+        - name: backend
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: "api"
+            - name: APP_NAME
+              value: "backend"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/gateway.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      containers:
+        - name: gateway
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: "gateway"
+            - name: APP_NAME
+              value: "gateway"
+            - name: BACKEND_URL
+              value: "http://backend.default.svc:8080"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/metrics.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics
+  labels:
+    app: metrics
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics
+  template:
+    metadata:
+      labels:
+        app: metrics
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      containers:
+        - name: metrics
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: "api"
+            - name: APP_NAME
+              value: "metrics"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: "4"
+              memory: 128Mi
+            requests:
+              cpu: "2"
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/reporter.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reporter
+  labels:
+    app: reporter
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reporter
+  template:
+    metadata:
+      labels:
+        app: reporter
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      serviceAccountName: reporter
+      containers:
+        - name: reporter
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: APP_MODE
+              value: "reporter"
+            - name: APP_NAME
+              value: "reporter"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/worker.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+        app.kubernetes.io/part-of: eb-debug-lab
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: debug-lab-2.0.0
+    spec:
+      containers:
+        - name: worker
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_MODE
+              value: "worker"
+            - name: APP_NAME
+              value: "worker"
+            - name: VERSION
+              value: "2.0.0"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: debug-lab/templates/migrate-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  labels:
+    app: migrate
+    app.kubernetes.io/part-of: eb-debug-lab
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: debug-lab-2.0.0
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: migrate
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: "docker.io/ebinterview/eb-debug-app:1.0.1"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APP_MODE
+              value: "migrate"
+            - name: APP_NAME
+              value: "migrate"
+            - name: VERSION
+              value: "2.0.0"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+
+NOTES:
+debug-lab installed into namespace debug-lab.
+
+Goal state:
+  * migrate Job: Completed
+  * backend, gateway, worker, reporter, metrics: all pods Running and 1/1 Ready
+  * gateway /status reports {"self":"ok","backend":"ok",...}
+
+Check your progress at any time:
+  ./scenario.sh verify
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mhelm upgrade debug-lab . -n debug-lab[27m[37D[27mh[27me[27ml[27mm[27m [27mu[27mp[27mg[27mr[27ma[27md[27me[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27m.[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[?2004l
+Release "debug-lab" has been upgraded. Happy Helming!
+NAME: debug-lab
+LAST DEPLOYED: Sat Nov  7 01:00:25 2026
+NAMESPACE: [36mdebug-lab[0m
+STATUS: [32mdeployed[0m
+REVISION: 5
+DESCRIPTION: Upgrade complete
+TEST SUITE: None
+NOTES:
+debug-lab installed into namespace debug-lab.
+
+Goal state:
+  * migrate Job: Completed
+  * backend, gateway, worker, reporter, metrics: all pods Running and 1/1 Ready
+  * gateway /status reports {"self":"ok","backend":"ok",...}
+
+Check your progress at any time:
+  ./scenario.sh verify
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mkubectl -n debug-lab get pods[27m[29D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27mg[27me[27mt[27m [27mp[27mo[27md[27ms[?2004l
+NAME                        READY   STATUS                       RESTARTS        AGE
+backend-6865788b54-qpbhw    0/1     Running                      0               19m
+backend-7948fd6b4b-mxsk7    0/1     CreateContainerConfigError   0               56m
+gateway-5cbdcd4bf8-gnlgj    0/1     CreateContainerConfigError   0               56m
+gateway-676cfd854-44286     0/1     Running                      0               19m
+metrics-547dccf75-6qlkg     0/1     CreateContainerConfigError   0               56m
+metrics-749f5448c9-qzxpp    0/1     Running                      0               19m
+migrate-spqj8               0/1     Completed                    0               14m
+reporter-6f8bff6b8d-mq6x8   0/1     CreateContainerConfigError   0               56m
+reporter-74bf5fb96-w4whh    0/1     Running                      0               19m
+worker-5fcd6b9b6b-8gwjr     0/1     CreateContainerConfigError   0               56m
+worker-644f6d84cd-zjczr     0/1     CrashLoopBackOff             8 (3m40s ago)   19m
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7mkubectl -n debug-lab get endpoints[27m[34D[27mk[27mu[27mb[27me[27mc[27mt[27ml[27m [27m-[27mn[27m [27md[27me[27mb[27mu[27mg[27m-[27ml[27ma[27mb[27m [27mg[27me[27mt[27m [27me[27mn[27md[27mp[27mo[27mi[27mn[27mt[27ms[?2004l
+[33;1mWarning:[0m v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME       ENDPOINTS   AGE
+backend                56m
+gateway                56m
+reporter               56m
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h[7m./scenario.sh verify[27m[20D[27m.[27m/[27ms[27mc[27me[27mn[27ma[27mr[27mi[27mo[27m.[27ms[27mh[27m [27mv[27me[27mr[27mi[27mf[27my[?2004l
+zsh: no such file or directory: ./scenario.sh
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hccd ../[?2004l
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hcd .././scenario.sh verify[?2004l
+==> verifying goal state in namespace debug-lab
+  [32mPASS[0m  migrate Job completed
+  [31mFAIL[0m  deployment backend: 0/1 ready
+  [31mFAIL[0m  deployment gateway: 0/1 ready
+  [31mFAIL[0m  deployment worker: 0/1 ready
+  [31mFAIL[0m  deployment reporter: 0/1 ready
+  [31mFAIL[0m  deployment metrics: 0/1 ready
+  [31mFAIL[0m  1 pod(s) in CrashLoopBackOff
+  [31mFAIL[0m  ServiceAccount debug-lab/reporter cannot list pods
+  [31mFAIL[0m  backend does not answer on http://backend:8080/healthz
+  [31mFAIL[0m  gateway /status does not report backend=ok
+  [31mFAIL[0m  reporter /report does not return a pod count
+
+[31m10 check(s) failing[0m, 1 passing. Keep digging — every failure is a symptom.
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004h[7msed -n 20,50p templates/backend.yaml[27m[36D[27ms[27me[27md[27m [27m-[27mn[27m [27m2[27m0[27m,[27m5[27m0[27mp[27m [27mt[27me[27mm[27mp[27ml[27ma[27mt[27me[27ms[27m/[27mb[27ma[27mc[27mk[27me[27mn[27md[27m.[27my[27ma[27mm[27ml[?2004l
+sed: templates/backend.yaml: No such file or directory
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro lab % [K[?2004hccd broken-chart[1m/[0m[0m [?2004l
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004hcd broken-chart[15Dsed -n 20,50p templates/backend.yaml[?2004l
+        - name: backend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.common.port }}
+          env:
+            {{- range $name, $value := .Values.backend.env }}
+            - name: PORT
+              value: "8080"
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+            
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.common.port }}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            runAsGroup: {{ .Values.securityContext.runAsGroup }}
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+[1m[7m%[27m[1m[0m                                                                                                                                                                                              [0m[27m[24m[Jrythmos@Rythmoss-MacBook-Pro broken-chart % [K[?2004h
