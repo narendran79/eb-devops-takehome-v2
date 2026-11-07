@@ -1,0 +1,21 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  build-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Helm lint + template
+        run: |
+          helm lint chart
+          helm template demo chart --set replicaCount=2 >/dev/null
+      - name: Build image
+        run: docker build -t demo-service:ci service/
+      - name: Trivy scan (fail on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: demo-service:ci
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
