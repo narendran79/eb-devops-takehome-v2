@@ -25,8 +25,8 @@ curl -s -H 'Host: demo.local' http://localhost/
 ## Resource requests and limits
 | | CPU | Memory |
 |---|---|---|
-| requests | 50m | 64Mi |
-| limits | 200m | 128Mi |
+| requests | 50m | 128Mi |
+| limits | 200m | 256Mi |
 
 *Why:* Till's a basic Python HTTP server, So I've configured 128Mi request to give few threads headroom and 256Mi limit so it prevent python memory leak, without throttling CPU. 50m CPU is more than enough for basic http request for a python service that is mostly idle. 200m limit allows bursts without letting one pod hog a core. All these are **estimates, not measured** once. So in production I will run a load test and size from kubectl top or using Prometheus, since CPU limits causes throttling.
 
